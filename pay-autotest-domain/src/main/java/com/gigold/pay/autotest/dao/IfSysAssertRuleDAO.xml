@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gigold.pay.autotest.dao.IfSysAssertRuleDAO">
+
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysAssertRule" id="IfSysAssertRule">
+		<id property="id" column="ID" />
+		<result property="mockId" column="MOCK_ID" />
+		<result property="asClass" column="AS_CLASS" />
+		<result property="asType" column="AS_TYPE" />
+		<result property="asObj" column="AS_OBJ" />
+		<result property="asValue" column="AS_VALUE" />
+		<result property="desc" column="DESC" />
+		<result property="status" column="STATUS" />
+
+	</resultMap>
+
+	<resultMap type="Map" id="hashMap">
+		<result property="type" column="TYPE" />
+		<result property="name" column="NAME" />
+		<result property="class" column="CLASS" />
+	</resultMap>
+
+
+
+	<select id="getAssertRulesByMockId" parameterType="int" resultMap="IfSysAssertRule">
+		select
+		a.ID,
+		a.MOCK_ID,
+		a.AS_CLASS,
+		a.AS_TYPE,
+		a.AS_OBJ,
+		a.AS_VALUE,
+		a.DESC
+		from T_IF_ASSERT_RULE a where MOCK_ID = #{mockId} and status = "Y"
+	</select>
+
+	<update id="updateAssertRule" parameterType="com.gigold.pay.autotest.bo.IfSysAssertRule">
+		REPLACE INTO
+		T_IF_ASSERT_RULE
+		set
+		<if test="id!=null and id!=''">
+			id=#{id},
+		</if>
+		`STATUS`=#{status},
+		MOCK_ID=#{mockId},
+		AS_OBJ=#{asObj},
+		AS_TYPE=#{asType},
+		AS_CLASS=#{asClass},
+		AS_VALUE=#{asValue},
+		`DESC`=#{desc}
+	</update>
+
+
+	<update id="deleteAssertRule" parameterType="int">
+		UPDATE
+		T_IF_ASSERT_RULE
+		set
+		`STATUS`="N"
+		WHERE id=#{id}
+	</update>
+
+	<select id="getAsType" resultMap="hashMap">
+		select
+		TYPE,
+		NAME
+		from
+		T_IF_ASSERT_ASTYPE
+	</select>
+
+	<select id="getAsClass" resultMap="hashMap">
+		select
+		CLASS,NAME
+		from
+		T_IF_ASSERT_ASCLASS
+	</select>
+</mapper>
+ 
+ 
+ 
+ 
+ 
+ 

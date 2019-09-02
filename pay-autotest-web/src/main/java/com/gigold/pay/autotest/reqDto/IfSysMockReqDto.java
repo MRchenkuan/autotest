@@ -1,0 +1,51 @@
+/**
+ * Title: IfSysMockReqaDto.java<br/>
+ * Description: <br/>
+ * Copyright: Copyright (c) 2015<br/>
+ * Company: gigold<br/>
+ *
+ */
+package com.gigold.pay.autotest.reqDto;
+
+import com.gigold.pay.framework.core.RequestDto;
+import com.gigold.pay.framework.core.SysCode;
+import com.gigold.pay.framework.core.exception.OtherExceptionCollect;
+
+/**
+ * Title: IfSysMockReqaDto<br/>
+ * Description: <br/>
+ * Company: gigold<br/>
+ * @author xiebin
+ * @date 2015年11月30日上午11:39:51
+ *
+ */
+public class IfSysMockReqDto extends RequestDto {
+
+	/** serialVersionUID */
+	private static final long serialVersionUID = 1L;
+	private int mockId;
+
+	public int getMockId() {
+		return mockId;
+	}
+
+	public void setMockId(int mockId) {
+		this.mockId = mockId;
+	}
+
+	public String validation(){
+//		if(StringUtil.isBlank(this.rspCode)){
+//			return CodeItem.RETURN_CODE_IS_NULL;
+//		}
+//		if(StringUtil.isBlank(this.requestJson)){
+//			return CodeItem.REQ_JSON_IS_NULL;
+//		}
+		return SysCode.SUCCESS;
+	}
+
+
+	@Override
+	public boolean validate() throws OtherExceptionCollect {
+		return true;
+	}
+}

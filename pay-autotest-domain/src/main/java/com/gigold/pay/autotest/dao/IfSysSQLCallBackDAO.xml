@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gigold.pay.autotest.dao.IfSysSQLCallBackDAO">
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysSQLCallBack" id="IfSysSQLCallBackMap">
+		<id property="id" column="ID" />
+		<result property="sql" column="SQL" />
+		<result property="mockid" column="MOCK_ID" />
+		<result property="desc" column="DESC" />
+		<result property="status" column="STATUS" />
+		<result property="dbId" column="DB_ID" />
+	</resultMap>
+
+	<resultMap type="HashMap" id="HashMap">
+		<id property="id" column="ID" />
+		<result property="caseName" column="CASE_NAME" />
+		<result property="sql" column="SQL" />
+	</resultMap>
+
+	<!-- 根据项目id获取项目下的db简介 -->
+	<select id="getDBInfoList" parameterType="int" resultType="Map">
+		select
+			ID id,
+			DB_PROJECT_ID projectId,
+			DB_NAME dbName,
+			DB_DESC dbDesc
+			from
+			T_IF_CALLBACK_DB
+		where
+			DB_PROJECT_ID=(select
+				IF_PROJECT_ID
+			from
+				T_IF_SYSTEM
+			where
+				id =(select
+					IF_SYS_ID
+				from
+					T_IF_INTERFACE
+				where
+					id = (select
+						IF_ID
+					from
+						T_IF_AUTO_MOCK
+					where
+						id=#{mockId}
+					))) and STATUS ='Y'
+	</select>
+
+	<select id="getIfSysSQLCallBackByMockId" parameterType="com.gigold.pay.autotest.bo.IfSysSQLCallBack" resultMap="IfSysSQLCallBackMap">
+		select
+			a.ID,
+			a.SQL,
+			a.MOCK_ID,
+			a.DESC,
+			a.STATUS,
+			a.DB_ID
+		from
+			T_IF_CALLBACK_SQL a
+		where
+			a.MOCK_ID = #{mockid} and a.STATUS='Y'
+		limit 1
+	</select>
+
+	<select id="getIfSysSQLCallBackById" parameterType="com.gigold.pay.autotest.bo.IfSysSQLCallBack" resultMap="IfSysSQLCallBackMap">
+		select
+			a.ID,
+			a.SQL,
+			a.MOCK_ID,
+			a.DESC,
+			a.STATUS,
+			a.DB_ID
+		from
+			T_IF_CALLBACK_SQL a
+		where
+			a.ID = #{id}
+	</select>
+
+	<!--更新sql对象-->
+	<update id="updateIfSysSQLCallBack" parameterType="com.gigold.pay.autotest.bo.IfSysSQLCallBack">
+		replace into
+			T_IF_CALLBACK_SQL
+		set
+		<if test="id!=null and id!=0">
+			ID=#{id},
+		</if>
+
+		<if test="sql!=null">
+			`SQL`=#{sql},
+		</if>
+
+		<if test="desc!=null">
+			`DESC`=#{desc},
+		</if>
+
+		<if test="status!=null and status!=''">
+			`STATUS`=#{status},
+		</if>
+		`MOCK_ID`=#{mockid},
+		`DB_ID`=#{dbId}
+
+
+	</update>
+
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysSQLCallBack" id="ifSysSQLCallBack">
+		<id property="id" column="ID" />
+		<result property="sql" column="SQL" />
+		<result property="mockid" column="MOCK_ID" />
+		<result property="desc" column="DESC" />
+		<result property="dbId" column="DB_ID" />
+	</resultMap>
+	<!-- 返回接口的sql列表 -->
+	<select id="getMockSQLByMockId" parameterType="int" resultMap="ifSysSQLCallBack">
+		<![CDATA[
+			select
+				a.ID,
+				a.SQL,
+				a.MOCK_ID,
+				a.DESC,
+				a.DB_ID
+			from
+				T_IF_CALLBACK_SQL a
+			where
+				MOCK_ID=#{mockId} and status='Y' limit 1;
+      	]]>
+	</select>
+
+
+	<!-- 查找sql数据 -->
+	<select id="excuteSql" parameterType="String" resultType="Map">
+		select * from (${paramSQL}) b limit 100
+	</select>
+
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysSQLHistory" id="ifSysSQLHistory">
+		<id property="id" column="ID" />
+		<result property="sqlid" column="SQLID" />
+		<result property="mockid" column="MOCKID" />
+		<result property="order" column="ORDER" />
+		<result property="sql" column="SQL" />
+		<result property="resulte" column="RESULTE" />
+		<result property="exceptions" column="EXCEPTIONS" />
+	</resultMap>
+
+	<!-- 查找sql历史数据 -->
+	<select id="getSQLHistory" resultMap="ifSysSQLHistory">
+		select
+		a.ID,
+		a.MOCKID,
+		a.SQLID,
+		a.ORDER,
+		a.RESULTE,
+		a.EXCEPTIONS,
+		a.SQL
+		from
+		T_IF_CALLBACK_SQL_RESULTE a
+		WHERE a.MOCKID=#{mockid} AND a.SQLID=#{sqlid} AND a.ORDER=#{order};
+	</select>
+
+	<!-- 保存sql历史数据 -->
+	<update id="saveSQLResulte" parameterType="com.gigold.pay.autotest.bo.IfSysSQLHistory">
+		replace into
+		T_IF_CALLBACK_SQL_RESULTE
+		SET
+		<if test="id!=null and id!=0 ">
+			ID=#{id},
+		</if>
+		<if test="order!=null">
+			`ORDER`=#{order},
+		</if>
+		RESULTE=#{resulte},
+		<if test="exceptions!=null ">
+			EXCEPTIONS=#{exceptions},
+		</if>
+		<if test="sql!=null ">
+			`SQL`=#{sql},
+		</if>
+
+		<if test="mockid!=null and mockid!=0 ">
+			MOCKID=#{mockid},
+		</if>
+		SQLID=#{sqlid}
+	</update>
+
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysCallBackDB" id="ifSysCallBackDB">
+		<id property="id" column="ID" />
+		<result property="projectId" column="DB_PROJECT_ID" />
+		<result property="dbName" column="DB_NAME" />
+		<result property="dbHost" column="DB_HOST" />
+		<result property="dbPort" column="DB_PORT" />
+		<result property="dbUsername" column="DB_USERNAME" />
+		<result property="dbPassword" column="DB_PASSWORD" />
+		<result property="dbDesc" column="DB_DESC" />
+	</resultMap>
+
+	<!-- 查找sql所属数据库信息 -->
+	<select id="getCallBackDbById" resultMap="ifSysCallBackDB">
+		SELECT
+		ID,
+		DB_PROJECT_ID,
+		DB_NAME,
+		DB_HOST,
+		DB_PORT,
+		DB_USERNAME,
+		DB_PASSWORD,
+		DB_DESC
+		FROM T_IF_CALLBACK_DB
+		WHERE id='1'
+		AND `STATUS`="Y"
+	</select>
+</mapper>
+ 
+ 
+ 
+ 
+ 
+ 

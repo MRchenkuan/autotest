@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gigold.pay.autotest.dao.IfSysMockHistoryDAO">
+
+	<resultMap type="com.gigold.pay.autotest.bo.IfSysMockHistory" id="ifSysMockHistoryResultMap">
+		<id property="id" column="ID" />
+		<id property="mockId" column="MOCK_ID" />
+		<result property="ifId" column="IF_ID" />
+		<result property="jrn" column="JRN" />
+		<result property="testDt" column="TEST_DT" />
+		<result property="testTm" column="TEST_TIME" />
+		<result property="status" column="STATUS" />
+		<result property="testResult" column="TEST_RESULT" />
+		<result property="ifName" column="IF_NAME" />
+		<result property="ifSysId" column="IF_SYS_ID" />
+	</resultMap>
+
+	
+
+	<insert id="addIfSysMockHistory" parameterType="com.gigold.pay.autotest.bo.IfSysMockHistory"
+		useGeneratedKeys="true" keyProperty="id">
+        <![CDATA[  
+        insert into
+        T_IF_MOCK_HISTORY
+        
+        (
+         MOCK_ID,
+         IF_ID,
+         JRN,
+         TEST_DT,
+         TEST_TIME,
+         TEST_RESULT
+        )
+        values(
+        #{mockId},
+        #{ifId},
+        #{jrn},
+        #{testDt},
+        #{testTm},
+        #{testResult})
+    ]]>
+	</insert>
+	
+	<!-- 根据批次号和mockID获取用例历史记录 -->
+	<select id="getmockhistoryByJrnAndMockId" parameterType="com.gigold.pay.autotest.bo.IfSysMockHistory" resultMap="ifSysMockHistoryResultMap" >
+        <![CDATA[
+			
+    SELECT
+      MOCK_ID,
+      IF_ID,
+      TEST_RESULT,
+      JRN
+     FROM T_IF_MOCK_HISTORY
+     where JRN=#{jrn}
+     and MOCK_ID=#{mockId}
+     and STATUS='Y'
+    	]]>
+	</select>
+
+	<select id="getNewestReslutOf" parameterType="int" resultMap="ifSysMockHistoryResultMap" >
+        <![CDATA[
+			select
+		b.MOCK_ID,
+		b.IF_ID,
+		(select d.IF_SYS_ID from T_IF_INTERFACE d where d.ID=b.IF_ID) IF_SYS_ID,
+		(select d.IF_NAME from T_IF_INTERFACE d where d.ID=b.IF_ID) IF_NAME,
+		b.TEST_RESULT,
+		b.JRN,
+		b.TEST_DT,
+		b.TEST_TIME,
+		b.STATUS,
+		b.TM_SMP
+ 		from T_IF_MOCK_HISTORY b where b.JRN in
+				(select c.JRN from (select distinct a.JRN from T_IF_MOCK_HISTORY a
+						order by a.JRN desc
+						limit #{limit}) c);
+    	]]>
+	</select>
+
+	<select id="getNewestReslutByIfIdOf" resultMap="ifSysMockHistoryResultMap" >
+        <![CDATA[
+			select
+		b.MOCK_ID,
+		b.IF_ID,
+		(select d.IF_SYS_ID from T_IF_INTERFACE d where d.ID=b.IF_ID) IF_SYS_ID,
+		(select d.IF_NAME from T_IF_INTERFACE d where d.ID=b.IF_ID) IF_NAME,
+		b.TEST_RESULT,
+		b.JRN,
+		b.TEST_DT,
+		b.TEST_TIME,
+		b.STATUS,
+		b.TM_SMP
+ 		from T_IF_MOCK_HISTORY b where b.IF_ID=#{ifid} and b.JRN in
+				(select c.JRN from (select distinct a.JRN from T_IF_MOCK_HISTORY a
+						order by a.JRN desc
+						limit #{limit}) c);
+    	]]>
+	</select>
+
+	<!--根据接口id列表查询出近期结果-->
+	<select id="getHistoryByIfIdList" resultMap="ifSysMockHistoryResultMap">
+        <![CDATA[
+			select * from T_IF_MOCK_HISTORY ih1 where ih1.JRN in (
+				select jrnList.JRN from (
+					select distinct ih.JRN from T_IF_MOCK_HISTORY ih where IF_ID in (${ifIdList}) order by ih.JRN desc limit #{jnrCount}) jrnList)
+				and ih1.IF_ID in ((select ID from T_IF_INTERFACE where id in (${ifIdList}) and ISVALID ="Y"))
+				and ih1.MOCK_ID in ((select ID from T_IF_AUTO_MOCK where IF_ID in (${ifIdList}) and STATUS ="Y"))
+    	]]>
+	</select>
+
+	<!--根据接口id列表查询出近期结果-->
+	<select id="getMockCountByIfIdList" resultType="int">
+		select count(*) from T_IF_AUTO_MOCK where IF_ID in(${ifIdListStr}) and STATUS="Y"
+	</select>
+
+	<resultMap type="Map" id="ifInfo">
+		<result property="id" column="ID" />
+		<result property="ifName" column="IF_NAME" />
+		<result property="ifSysId" column="IF_SYS_ID" />
+		<result property="ifCreateBy" column="IF_CREATEBY" />
+
+		<result property="ifSysName" column="IF_SYS_NAME" />
+		<result property="ifSysDesc" column="IF_SYS_DESC" />
+
+		<result property="username" column="USERNAME" />
+		<result property="email" column="EMAIL" />
+	</resultMap>
+	<!--根据接口id列表查询出接口名字-->
+	<select id="getInterfaceInfoByIdList" resultMap="ifInfo">
+		select ID,
+			IF_NAME,
+			IF_SYS_ID,
+			IF_CREATEBY
+		from T_IF_INTERFACE where ID in(${ifIdListStr}) and ISVALID="Y"
+	</select>
+
+	<!--根据接口id列表查询出系统信息-->
+	<select id="getModuleInfoByIdList" resultMap="ifInfo">
+		select
+			ID,
+			IF_SYS_NAME,
+			IF_SYS_DESC
+		from
+			T_IF_SYSTEM
+		where id in (
+			select IF_SYS_ID from T_IF_INTERFACE where ID in(${ifIdListStr}) and ISVALID="Y")
+	</select>
+
+	<!--根据接口id列表查询出用户信息-->
+	<select id="getUserInfoByIdList" resultMap="ifInfo">
+		select
+			ID,
+			USERNAME,
+			EMAIL
+		from
+			T_IF_USER
+		where id in (
+			select IF_CREATEBY from T_IF_INTERFACE where ID in(${ifIdListStr}) and ISVALID="Y")
+	</select>
+</mapper>
+ 
+ 
+ 
+ 
+ 
+ 

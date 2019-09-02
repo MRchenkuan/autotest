@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gigold.pay.autotest.dao.IfSysTestListDAO">
+
+	<resultMap type="com.gigold.pay.autotest.bo.TestList" id="ifResultMap">
+		<id property="id" column="ID" />
+		<result property="title" column="TITLE" />
+		<result property="desc" column="DESC" />
+		<result property="excludeIdList" column="EXCLUDE_IFS" />
+		<result property="startTime" column="STARTTIME" />
+		<result property="endTime" column="ENDTIME" />
+		<result property="status" column="STATUS" />
+
+	</resultMap>
+
+
+
+	<!-- 获取测试清单 -->
+	<select id="getTestListById" parameterType="int" resultMap="ifResultMap">
+		select
+			*
+		from
+			T_IF_TESTLIST it
+		where
+			id =#{listId}
+			and it.`STATUS` != "DELETE"
+	</select>
+
+	<!-- 获取测试清单 -->
+	<select id="getAllTestList" resultMap="ifResultMap">
+		select
+			*
+		from
+			T_IF_TESTLIST it
+		where
+			it.`STATUS` != "DELETED"
+	</select>
+
+	<!-- 更新测试清单 -->
+	<update id="updateTestListString"  parameterType="com.gigold.pay.autotest.bo.TestList">
+		replace into
+			T_IF_TESTLIST
+		set
+			<if test="id!=null and id!=''">
+				id=#{id},
+			</if>
+		TITLE=#{title},
+		`DESC`=#{desc},
+		EXCLUDE_IFS=#{excludeIdList},
+		STARTTIME=#{startTime},
+		ENDTIME_ID=#{endTime}
+	</update>
+	
+	
+</mapper>
+ 
+ 
+ 
+ 
+ 
+ 

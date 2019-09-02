@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gigold.pay.autotest.dao.InterFaceDao">
+
+	<resultMap type="com.gigold.pay.autotest.bo.InterFaceInfo" id="ifResultMap">
+		<id property="id" column="ID" />
+		<result property="ifName" column="IF_NAME" />
+		<result property="ifDesc" column="IF_DESC" />
+		<result property="uid" column="IF_CREATEBY" />
+		<result property="ifCreateTime" column="IF_CREATETIME" />
+		<result property="ifSysId" column="IF_SYS_ID" />
+		<result property="sysName" column="SYS_NAME" />
+		<result property="ifProId" column="IF_PRO_ID" />
+		<result property="proName" column="PRO_NAME" />
+		<result property="ifStatus" column="IF_STATUS" />
+		<result property="ifUrl" column="IF_URL" />
+		<result property="addressUrl" column="ADDRESS_URL" />
+		<result property="method" column="IF_TYPE" />
+		<result property="ifUrl" column="IF_FULL_URL" />
+		<result property="ifProtocol" column="IF_PROTOCOL" />
+		<result property="isValid" column="ISVALID" />
+		<result property="method" column="IF_METHOD" />
+		<result property="methodVersion" column="IF_DUBBO_VERSION" />
+		<result property="dsname" column="DSNAME" />
+		<result property="dsname" column="USERNAME" />
+		<result property="autoTest" column="AUTO_TEST" />
+	</resultMap>
+
+	<resultMap type="HashMap" id="hashMap">
+		<id property="id" column="ID" />
+		<result property="count" column="COUNT" />
+	</resultMap>
+	<!-- 根据ID查询接口信息 -->
+	<select id="getDistinctIfMap" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo"
+		resultMap="ifResultMap">
+		select
+		ii.ID,
+		ii.IF_NAME,
+		ii.IF_SYS_ID,
+		(select iu.username from T_IF_USER iu where iu.id = ii.IF_CREATEBY ) DSNAME
+		from T_IF_INTERFACE ii
+		where
+			ii.ISVALID='Y'
+			and ii.AUTO_TEST="Y"
+			and not isNull(ii.IF_URL)
+			and IF_PROTOCOL='HTTP'
+			and IF_URL !="test.do"
+			and IF_SYS_ID not in (0,1,2)
+	</select>
+
+	<!-- 根据模块统计接口数 -->
+	<select id="getAllModIfCount" resultMap="hashMap">
+		select
+		if_sys_id ID,
+		count(*) COUNT
+		from
+		T_IF_INTERFACE a
+		where
+		a.IF_PROTOCOL ="HTTP"
+		and a.AUTO_TEST="Y"
+		and a.ISVALID="Y"
+		and not isNull(a.IF_URL)
+		and a.`IF_URL`!="test.do"
+		group by a.if_sys_id;
+	</select>
+
+	<!-- 根据ID查询接口信息 -->
+	<select id="getInterFaceById" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo"
+		resultMap="ifResultMap">
+        <![CDATA[
+       select ii.ID,
+		ii.IF_NAME,
+		ii.IF_DESC,
+		ii.if_type IF_TYPE,
+		ii.AUTO_TEST,
+		(select a.USERNAME from T_IF_USER a where a.id = ii.IF_CREATEBY)
+		DSNAME,
+		ii.IF_URL,
+		(select sys.IF_SYS_NAME from T_IF_SYSTEM sys where sys.id=ii.IF_SYS_ID)
+		SYS_NAME,
+		ii.IF_SYS_ID,
+		(select pro.IF_PRO_NAME from T_IF_PRO pro where pro.id=ii.IF_PRO_ID and
+		pro.IF_SYS_ID=ii.IF_SYS_ID) PRO_NAME,
+		(select pro.ADDRESS_URL from T_IF_PRO pro where pro.id=ii.IF_PRO_ID)
+		ADDRESS_URL
+		from T_IF_INTERFACE ii
+        where ii.ID=#{id} and ii.ISVALID='Y'
+        ]]>
+	</select>
+	<!-- 分页获取接口基本信息 列表页 -->
+	<select id="getAllIfSys" resultMap="ifResultMap" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+		concat(PRO.address_url,if_url) IF_FULL_URL,
+		if_desc IF_DESC,
+		if_type IF_TYPE,
+		inteFace.ID,
+		inteFace.AUTO_TEST,
+		IF_NAME,
+		IF_SYS_NAME SYS_NAME,
+		IF_PRO_NAME PRO_NAME,
+		USERNAME
+		from T_IF_INTERFACE inteFace
+		left join T_IF_SYSTEM sys on inteFace.IF_SYS_ID=sys.ID
+		left join T_IF_PRO PRO on inteFace.IF_PRO_ID=PRO.ID
+		left join T_IF_USER user on
+		inteFace.IF_CREATEBY=user.ID
+		where (inteFace.IF_NAME like '%${ifName}%'
+		or inteFace.IF_DESC like '%${ifName}%'
+		or inteFace.ID = '${ifName}'
+		or IF_SYS_NAME like '%${ifName}%'
+		or IF_PRO_NAME like '%${ifName}%'
+		or USERNAME like '%${ifName}%' )
+		and inteFace.ISVALID='Y'
+		
+		and inteFace.IF_PROTOCOL='HTTP'
+		and inteFace.IF_SYS_ID not in (0,1,2)
+		  
+		<if test="ifSysId != null and ifSysId!=0">
+			and inteFace.IF_SYS_ID = #{ifSysId}
+		</if>
+		<if test="ifProId != null and ifProId!=0">
+            and inteFace.IF_PRO_ID = #{ifProId}
+        </if>
+		<if test="id != null and id!=0">
+			and inteFace.ID = #{id}
+		</if>
+	</select>
+	
+	<!-- 分页获取接口基本信息 测试脚本 排除 0:测试接口,1:独孤九剑系统接口,2:其他 -->
+	<select id="getAllIfSysForTest" resultMap="ifResultMap" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+            ii.ID,
+            ii.IF_NAME,
+            ii.IF_URL,
+            ii.IF_TYPE,
+			pro.`ADDRESS_URL` ADDRESS_URL,
+            ts.`IF_SYS_NAME` SYS_NAME,
+            pro.`IF_PRO_NAME` PRO_NAME
+		from
+            T_IF_INTERFACE ii
+            left join T_IF_SYSTEM ts on ii.`IF_SYS_ID` = ts.`id`
+            left join T_IF_PRO pro on ii.IF_PRO_ID = pro.id
+		where
+            ii.ISVALID='Y'
+			and ii.AUTO_TEST='Y'
+            and ii.IF_PROTOCOL='HTTP'
+            and not isNull(ii.IF_URL)
+            and ii.IF_SYS_ID not in (0,1,2)
+            order by
+            ii.IF_SYS_ID
+	</select>
+
+	<!-- 获取能被测试的所有接口 -->
+	<select id="getAllInterfaceBeTest" resultMap="ifResultMap" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+			ii.ID,
+			ii.IF_NAME,
+			ii.IF_URL,
+			ii.IF_TYPE,
+			ts.id IF_SYS_ID,
+			pro.`ADDRESS_URL` ADDRESS_URL,
+			ts.`IF_SYS_NAME` SYS_NAME,
+			pro.`IF_PRO_NAME` PRO_NAME
+		from
+			T_IF_INTERFACE ii
+			left join T_IF_SYSTEM ts on ii.`IF_SYS_ID` = ts.`id`
+			left join T_IF_PRO pro on ii.IF_PRO_ID = pro.id
+		where
+			ii.ISVALID='Y'
+			and ii.IF_PROTOCOL='HTTP'
+			and not isNull(ii.IF_URL)
+			and ii.IF_SYS_ID not in (0,1,2)
+		order by
+			ii.IF_SYS_ID
+	</select>
+
+	<!-- -->
+	<select id="getSingleIfForTestById" resultMap="ifResultMap" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+			ii.ID,
+			ii.IF_NAME,
+			ii.IF_URL,
+			ii.IF_TYPE,
+			pro.`ADDRESS_URL` ADDRESS_URL,
+			ts.`IF_SYS_NAME` SYS_NAME,
+			pro.`IF_PRO_NAME` PRO_NAME
+		from
+			T_IF_INTERFACE ii
+			left join T_IF_SYSTEM ts on ii.`IF_SYS_ID` = ts.`id`
+			left join T_IF_PRO pro on ii.IF_PRO_ID = pro.id
+		where
+			ii.ISVALID='Y'
+			and ii.id=#{id}
+			and ii.IF_PROTOCOL='HTTP'
+			and not isNull(ii.IF_URL)
+			and ii.IF_SYS_ID not in (0,1,2)
+		order by
+			ii.IF_SYS_ID
+	</select>
+
+
+	<!-- 获取接口总数 -->
+	<select id="getAllIfSysCount" resultType="int" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+			count(*)
+		from
+			T_IF_INTERFACE a
+		where
+			a.IF_PROTOCOL ="HTTP"
+			and a.AUTO_TEST='Y'
+			and a.ISVALID="Y"
+			and not isNull(a.IF_URL)
+			and a.`IF_URL`!="test.do"
+			and a.IF_SYS_ID not in (0,1,2)
+	</select>
+
+	<!-- 根据模块获取接口总数 -->
+	<select id="getAllIfSysCountByMod" resultType="int" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		select
+			count(*)
+		from
+			T_IF_INTERFACE a
+		where
+			a.IF_PROTOCOL ="HTTP"
+			and a.ISVALID="Y"
+			and a.AUTO_TEST='Y'
+			and not isNull(a.IF_URL)
+			and a.`IF_URL`!="test.do"
+			and a.IF_SYS_ID not in (0,1,2)
+			and a.IF_SYS_ID=#{modId}
+	</select>
+
+	<!--更新接口信息: "自动测试状态"-->
+	<update id="updateInterfaceInfo" parameterType="com.gigold.pay.autotest.bo.InterFaceInfo">
+		UPDATE
+			T_IF_INTERFACE
+		SET
+			AUTO_TEST=#{autoTest}
+		WHERE
+			ID=#{id}
+	</update>
+	
+</mapper>
+ 
+ 
+ 
+ 
+ 
+ 
